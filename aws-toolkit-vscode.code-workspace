@@ -1,16 +1,24 @@
 {
 	"folders": [
 		{
+			"name": "aws-toolkit-vscode",
 			"path": "."
 		},
 		{
+			"name": "toolkit",
 			"path": "packages/toolkit"
 		},
 		{
+			"name": "core",
 			"path": "packages/core"
 		},
 		{
+			"name": "amazonq",
 			"path": "packages/amazonq"
+		},
+		{
+			"name": "🇧🇷 VSCode",
+			"path": ".."
 		}
 	],
 	"settings": {

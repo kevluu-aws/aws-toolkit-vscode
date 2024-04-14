@@ -2191,6 +2191,11 @@
         },
         "commands": [
             {
+                "command": "aws.accessanalyzer.policyChecks",
+                "title": "%AWS.command.accessanalyzer.policyChecks%",
+                "category": "%AWS.title%"
+            },
+            {
                 "command": "aws.amazonq.explainCode",
                 "title": "%AWS.command.amazonq.explainCode%",
                 "category": "%AWS.title%"
