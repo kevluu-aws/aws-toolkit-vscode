@@ -11,18 +11,7 @@ import { VueWebview } from '../../webviews/main'
 import { ExtContext } from '../../shared/extensions'
 //import { telemetry } from '../../shared/telemetry/telemetry'
 import { AccessAnalyzer } from 'aws-sdk'
-
-// interface ValidatePolicyApiMessage {
-//     region: string
-// }
-
-// interface CheckNoNewAccessPolicyApiMessage {
-//     region: string
-// }
-
-// interface CheckAccessNotGrantedPolicyApiMessage {
-//     region: string
-// }
+import { exec } from 'child_process'
 
 export interface PolicyChecksInitialData {
     referenceFilePath: string
@@ -34,12 +23,14 @@ export interface PolicyChecksInitialData {
 export class PolicyChecksWebview extends VueWebview {
     public static readonly sourcePath: string = 'src/accessanalyzer/vue/index.js'
     public readonly id = 'policyChecks'
+    private static editedDocumentFileName: string = vscode.window.activeTextEditor?.document.uri.path!
 
     //private readonly logger = getLogger()
 
     public constructor(
         private readonly data: PolicyChecksInitialData,
         private readonly client: AccessAnalyzer, //private readonly s3Client: S3
+        private readonly region: string,
         public readonly onChangeInputPath = new vscode.EventEmitter<string>(),
         public readonly onChangeReferenceFilePath = new vscode.EventEmitter<string>(),
         public readonly onChangeTerraformConfigPath = new vscode.EventEmitter<string>(),
@@ -60,7 +51,10 @@ export class PolicyChecksWebview extends VueWebview {
     public _setActiveTextEditorListener() {
         vscode.window.onDidChangeActiveTextEditor((message: any) => {
             const editedFile = vscode.window.activeTextEditor?.document
-            this.onChangeInputPath.fire(editedFile!.uri.path)
+            PolicyChecksWebview.editedDocumentFileName = editedFile!.uri.path
+            if (editedFile) {
+                this.onChangeInputPath.fire(editedFile!.uri.path)
+            }
         })
     }
     public _setActiveConfigurationListener() {
@@ -83,8 +77,124 @@ export class PolicyChecksWebview extends VueWebview {
         })
     }
 
-    public async validatePolicy(documentType: string, policyType: string) {
-        this.client.validatePolicy({ policyDocument: '', policyType })
+    public async validatePolicy(
+        documentType: string,
+        policyType: string,
+        tfConfigPath?: string,
+        cfnParameterPath?: string
+    ) {
+        const document = PolicyChecksWebview.editedDocumentFileName
+        switch (documentType) {
+            case 'JSON Policy Language':
+                this.client.validatePolicy(
+                    { policyDocument: vscode.window.activeTextEditor?.document.getText()!, policyType },
+                    function (err, data) {
+                        if (err) {
+                            console.log(err, err.stack)
+                        } else {
+                            if (data.findings.length > 0) {
+                                data.findings.forEach((finding: AccessAnalyzer.ValidatePolicyFinding) => {
+                                    if (finding.findingType === 'ERROR') {
+                                        vscode.window.showErrorMessage(
+                                            finding.findingType +
+                                                ': ' +
+                                                finding.findingDetails +
+                                                '\n' +
+                                                finding.locations?.toString()
+                                        )
+                                    } else {
+                                        vscode.window.showWarningMessage(
+                                            finding.findingType +
+                                                ': ' +
+                                                finding.findingDetails +
+                                                '\n' +
+                                                finding.locations?.toString()
+                                        )
+                                    }
+                                })
+                            } else {
+                                vscode.window.showInformationMessage(
+                                    'Policy checks did not discover any problems with your policy!'
+                                )
+                            }
+                        }
+                    }
+                )
+                return
+            case 'Terraform Plan':
+                const tfCommand = `tf-policy-validator validate --template-path ${document} --region ${this.region} --config ${tfConfigPath}`
+                exec(tfCommand, (err, output) => {
+                    if (err) {
+                        vscode.window.showErrorMessage('Failed to run command: ' + err.message)
+                    } else {
+                        const jsonOutput = JSON.parse(output)
+                        if (jsonOutput.BlockingFindings.length === 0 && jsonOutput.NonBlockingFindings.length === 0) {
+                            vscode.window.showInformationMessage(
+                                'Policy checks did not discover any problems with your policy!'
+                            )
+                        } else {
+                            jsonOutput.BlockingFindings.forEach((finding: any) => {
+                                vscode.window.showErrorMessage(
+                                    finding.findingType +
+                                        ': ' +
+                                        finding.details.findingDetails +
+                                        '\n' +
+                                        finding.details.locations?.toLocaleString()
+                                )
+                            })
+                            jsonOutput.NonBlockingFindings.forEach((finding: any) => {
+                                vscode.window.showWarningMessage(
+                                    finding.findingType +
+                                        ': ' +
+                                        finding.details.findingDetails +
+                                        '\n' +
+                                        finding.resourceName +
+                                        '\n' +
+                                        finding.policyName
+                                )
+                            })
+                        }
+                    }
+                })
+                return
+            case 'CloudFormation':
+                const cfnCommand = cfnParameterPath
+                    ? `cfn-policy-validator validate --template-path ${document} --region ${this.region} --parameters ${cfnParameterPath}`
+                    : `cfn-policy-validator validate --template-path ${document} --region ${this.region}`
+                exec(cfnCommand, (err, output) => {
+                    if (err) {
+                        vscode.window.showErrorMessage('Failed to run command: ' + err.message)
+                    } else {
+                        const jsonOutput = JSON.parse(output)
+                        if (jsonOutput.BlockingFindings.length === 0 && jsonOutput.NonBlockingFindings.length === 0) {
+                            vscode.window.showInformationMessage(
+                                'Policy checks did not discover any problems with your policy!'
+                            )
+                        } else {
+                            jsonOutput.BlockingFindings.forEach((finding: any) => {
+                                vscode.window.showErrorMessage(
+                                    finding.findingType +
+                                        ': ' +
+                                        finding.details.findingDetails +
+                                        '\n' +
+                                        finding.details.locations?.toLocaleString()
+                                )
+                            })
+                            jsonOutput.NonBlockingFindings.forEach((finding: any) => {
+                                vscode.window.showWarningMessage(
+                                    finding.findingType +
+                                        ': ' +
+                                        finding.details.findingDetails +
+                                        '\n' +
+                                        finding.resourceName +
+                                        '\n' +
+                                        finding.policyName
+                                )
+                            })
+                        }
+                    }
+                })
+        }
     }
 
     public async checkNoNewAccess() {}
@@ -116,7 +226,8 @@ export async function renderPolicyChecks(context: ExtContext): Promise<void> {
                 cfnParameterPath: cfnParameterPath ? cfnParameterPath : '',
                 referenceDocument: _getReferenceDocument(referencePolicyFilePath),
             },
-            client
+            client,
+            context.regionProvider.defaultRegionId
         )
         await wv.show({
             viewColumn: vscode.ViewColumn.Beside,

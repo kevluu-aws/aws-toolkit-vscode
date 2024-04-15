@@ -112,12 +112,12 @@
                     policies that are functional and conform to security best practices.
                 </p>
                 <div>
-                    <button id="button" v-on:click="runValidator">Run Policy Validation</button>
+                    <button class="button-theme-primary" v-on:click="runValidator">Run Policy Validation</button>
                 </div>
             </div>
         </div>
         <hr style="margin-top: 25px" />
-        <div class="custom-checks-container">
+        <div class="custom-checks-container" v-if="documentType != 'JSON Policy Language'">
             <h2 style="border-bottom-style: none">Custom Policy Checks</h2>
             <div style="display: block">
                 <p>
@@ -167,7 +167,7 @@
                         type="text"
                         style="display: flex; box-sizing: border-box; position: relative; margin-bottom: 10px"
                         id="input-path"
-                        placeholder="Reference policy file path"
+                        :placeholder="customChecksPathPlaceholder"
                         size="65"
                         v-on:change="setReferenceFilePath"
                         v-model="initialData.referenceFilePath"
@@ -183,7 +183,7 @@
                         "
                         rows="30"
                         v-model="initialData.referenceDocument"
-                        placeholder="Enter reference policy document"
+                        :placeholder="customChecksTextAreaPlaceholder"
                     ></textarea>
                 </div>
                 <div style="display: grid">
@@ -192,7 +192,11 @@
                         <a href="https://aws.amazon.com/iam/access-analyzer/pricing/"> IAM Access Analyzer pricing </a>.
                     </b>
                     <div>
-                        <button type="button" style="margin-bottom: 5px" v-on:click="runCustomPolicyCheck">
+                        <button
+                            class="button-theme-primary"
+                            style="margin-bottom: 5px"
+                            v-on:click="runCustomPolicyCheck"
+                        >
                             Run Custom Policy Check
                         </button>
                     </div>
@@ -226,6 +230,8 @@ export default defineComponent({
             referenceDocument: '',
         },
         inputPath: '',
+        customChecksPathPlaceholder: 'Reference policy file path',
+        customChecksTextAreaPlaceholder: 'Enter reference policy document',
     }),
     async created() {
         this.initialData = (await client.init()) ?? this.initialData
@@ -254,6 +260,13 @@ export default defineComponent({
         },
         setCheckType: function (event: any) {
             this.checkType = event.target.value
+            if (this.checkType == 'CheckNoNewAccess') {
+                this.customChecksPathPlaceholder = 'Reference policy file path'
+                this.customChecksTextAreaPlaceholder = 'Enter reference policy document'
+            } else {
+                this.customChecksPathPlaceholder = 'List of actions file path'
+                this.customChecksTextAreaPlaceholder = 'Enter list of actions'
+            }
         },
         setReferenceFilePath: function (event: any) {
             this.initialData.referenceFilePath = event.target.value
@@ -270,7 +283,19 @@ export default defineComponent({
         setTfConfigFilePath: function (event: any) {
             this.initialData.tfConfigPath = event.target.value
         },
-        runValidator: function () {},
+        runValidator: function () {
+            client
+                .validatePolicy(
+                    this.documentType,
+                    this.policyType,
+                    this.initialData.tfConfigPath,
+                    this.initialData.cfnParameterPath
+                )
+                .then(response => {
+                    console.log('Success!')
+                })
+                .catch(err => console.log(err))
+        },
         runCustomPolicyCheck: function () {},
     },
     computed: {},
