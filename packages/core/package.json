@@ -263,6 +263,24 @@
                     "type": "object",
                     "description": "%AWS.configuration.description.lambda.recentlyUploaded%",
                     "default": []
+                },
+                "aws.accessAnalyzer.policyChecks.referencePolicyFilePath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "File path or S3 path to a control policy for Custom Policy Checks.",
+                    "scope": "window"
+                },
+                "aws.accessAnalyzer.policyChecks.cloudFormationParameterFilePath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Keys and values for CloudFormation template parameters. Only parameters that are referenced by IAM policies in the template are required.",
+                    "scope": "machine-overridable"
+                },
+                "aws.accessAnalyzer.policyChecks.terraformConfigFilePath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Terraform Configuration File.",
+                    "scope": "machine-overridable"
                 }
             }
         },
