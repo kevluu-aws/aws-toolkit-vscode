@@ -36,9 +36,8 @@ export class PolicyChecksWebview extends VueWebview {
 
     public constructor(
         private readonly data: PolicyChecksInitialData,
-        private readonly client: AccessAnalyzer
-    ) //private readonly s3Client: S3
-    {
+        private readonly client: AccessAnalyzer //private readonly s3Client: S3
+    ) {
         super(PolicyChecksWebview.sourcePath)
     }
 
@@ -55,7 +54,6 @@ const Panel = VueWebview.compilePanel(PolicyChecksWebview)
 
 export async function renderPolicyChecks(context: ExtContext): Promise<void> {
     const logger: Logger = getLogger()
-
     try {
         const client = new AccessAnalyzer({ region: context.regionProvider.defaultRegionId })
         const wv = new Panel(
