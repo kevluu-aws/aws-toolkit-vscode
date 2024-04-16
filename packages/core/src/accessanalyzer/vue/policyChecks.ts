@@ -90,7 +90,7 @@ export class PolicyChecksWebview extends VueWebview {
                     { policyDocument: vscode.window.activeTextEditor?.document.getText()!, policyType },
                     function (err, data) {
                         if (err) {
-                            console.log(err, err.stack)
+                            vscode.window.showErrorMessage(err.message)
                         } else {
                             if (data.findings.length > 0) {
                                 data.findings.forEach((finding: AccessAnalyzer.ValidatePolicyFinding) => {

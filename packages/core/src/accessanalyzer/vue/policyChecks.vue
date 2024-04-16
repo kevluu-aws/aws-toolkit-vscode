@@ -28,7 +28,7 @@
                         <label for="select-document-type" style="display: block; margin-top: 5px; margin-bottom: 3px"
                             >Document Type</label
                         >
-                        <select id="select-document-type" v-on:change="setDocumentType">
+                        <select id="select-document-type" v-on:change="setDocumentType" v-model="documentType">
                             <option value="JSON Policy Language">JSON Policy Language</option>
                             <option value="CloudFormation">CloudFormation</option>
                             <option value="Terraform Plan">Terraform Plan</option>
