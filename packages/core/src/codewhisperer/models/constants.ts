@@ -232,13 +232,17 @@ export const codeFileScanJobTimeoutSeconds = 60 //1 minute
 
 export const projectSizeCalculateTimeoutSeconds = 10
 
-export const codeScanJobPollingIntervalSeconds = 1
+export const codeScanJobPollingIntervalSeconds = 5
+
+export const fileScanPollingDelaySeconds = 10
+
+export const projectScanPollingDelaySeconds = 30
 
 export const artifactTypeSource = 'SourceCode'
 
 export const codeScanFindingsSchema = 'codescan/findings/1.0'
 
-export const autoScanDebounceDelaySeconds = 2
+export const autoScanDebounceDelaySeconds = 5
 
 export const codewhispererDiagnosticSourceLabel = 'Amazon Q '
 
@@ -261,6 +265,9 @@ export const securityScanLanguageIds = [
     'packer',
     'plaintext',
     'jsonc',
+    'c',
+    'cpp',
+    'php',
 ] as const
 
 export type SecurityScanLanguageId = (typeof securityScanLanguageIds)[number]
@@ -581,9 +588,9 @@ export const codeFixAppliedFailedMessage = 'Failed to apply suggested code fix.'
 export const runSecurityScanButtonTitle = 'Run security scan'
 
 export const crossFileContextConfig = {
-    numberOfChunkToFetch: 60,
-    topK: 3,
-    numberOfLinesEachChunk: 10,
+    numberOfChunkToFetch: 200,
+    topK: 10,
+    numberOfLinesEachChunk: 50,
 }
 
 export const utgConfig = {
