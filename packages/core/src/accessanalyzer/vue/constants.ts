@@ -16,11 +16,18 @@ export abstract class IamPolicyChecksConstants {
     static readonly MissingReferenceDocError = 'Reference document is missing.'
     static readonly IncorrectFileExtension =
         'The file extension does not match the selected document type. Please select the correct document type, or use the proper file extension.'
-    static readonly InvalidAwsCredentials = 'AWS Role Credentials are invalid. Update AWS credentials and try again.'
+    static readonly InvalidAwsCredentials =
+        'AWS Role Credentials are invalid or expired. Update AWS credentials and try again.'
 }
 
 export type PolicyChecksErrorCode = 'FileReadError'
 
 export type PolicyChecksDocumentType = 'Terraform Plan' | 'CloudFormation' | 'JSON Policy Language'
 
+export type PolicyChecksCheckType = 'CheckNoNewAccess' | 'CheckAccessNotGranted'
+
+export type PolicyChecksPolicyType = 'Identity' | 'Resource'
+
 export type ValidatePolicyFindingType = 'ERROR' | 'SECURITY_WARNING' | 'SUGGESTION' | 'WARNING'
+
+export type PolicyChecksResult = 'Success' | 'Warning' | 'Error'
