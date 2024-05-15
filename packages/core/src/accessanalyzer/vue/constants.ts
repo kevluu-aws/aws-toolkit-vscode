@@ -11,7 +11,9 @@ export abstract class IamPolicyChecksConstants {
         'Result: FAIL. Please view the problems panel to review the issues with your policy document. Policy checks should be run until issues are no longer found in your policy document.'
     static readonly CustomCheckSuccessNoFindings =
         'Result: PASS. Policy checks did not discover any problems with your policy.'
-    static readonly CustomCheckFilePathSetting = 'aws.accessAnalyzer.policyChecks.customChecksFilePath'
+    static readonly CheckNoNewAccessFilePathSetting = 'aws.accessAnalyzer.policyChecks.checkNoNewAccessFilePath'
+    static readonly CheckAccessNotGrantedFilePathSetting =
+        'aws.accessAnalyzer.policyChecks.checkAccessNotGrantedFilePath'
     static readonly CfnParameterFilePathSetting = 'aws.accessAnalyzer.policyChecks.cloudFormationParameterFilePath'
     static readonly MissingReferenceDocError = 'Reference document is missing.'
     static readonly IncorrectFileExtension =

@@ -152,8 +152,8 @@
                                 >Select a Check Type</label
                             >
                             <select id="select-check-type" style="margin-bottom: 5px" v-on:change="setCheckType">
-                                <option value="CheckNoNewAccess">CheckNoNewAccess</option>
                                 <option value="CheckAccessNotGranted">CheckAccessNotGranted</option>
+                                <option value="CheckNoNewAccess">CheckNoNewAccess</option>
                             </select>
                         </div>
                         <div
@@ -170,8 +170,8 @@
                             >
                             <select
                                 id="select-reference-type"
-                                v-on:change="setCustomChecksPolicyType"
-                                v-model="customChecksPolicyType"
+                                v-on:change="setCheckNoNewAccessPolicyType"
+                                v-model="checkNoNewAccessPolicyType"
                             >
                                 <option value="Identity">Identity</option>
                                 <option value="Resource">Resource</option>
@@ -179,40 +179,85 @@
                         </div>
                     </div>
                 </div>
-                <div>
-                    <label for="input-path" style="display: block; margin-bottom: 3px">Provide a Reference File</label>
-                    <input
-                        type="text"
-                        style="
-                            display: flex;
-                            box-sizing: border-box;
-                            position: relative;
-                            margin-bottom: 10px;
-                            width: 70%;
-                        "
-                        id="input-path"
-                        :placeholder="customChecksPathPlaceholder"
-                        v-on:change="setCustomChecksFilePath"
-                        v-model="initialData.customChecksFilePath"
-                    />
+                <div v-if="checkType == 'CheckNoNewAccess'">
+                    <div>
+                        <label for="input-path" style="display: block; margin-bottom: 3px"
+                            >Provide a reference file containing a JSON Policy Document</label
+                        >
+                        <input
+                            type="text"
+                            style="
+                                display: flex;
+                                box-sizing: border-box;
+                                position: relative;
+                                margin-bottom: 10px;
+                                width: 70%;
+                            "
+                            id="input-path"
+                            placeholder="Enter reference policy document"
+                            v-on:change="setCheckNoNewAccessFilePath"
+                            v-model="initialData.checkNoNewAccessFilePath"
+                        />
+                    </div>
+                    <div style="margin-top: 5px" v-if="initialData.customChecksFileErrorMessage">
+                        <p style="color: var(--vscode-errorForeground)">
+                            {{ initialData.customChecksFileErrorMessage }}
+                        </p>
+                    </div>
+                    <div>
+                        <label style="margin-bottom: 3px">Enter a JSON Policy Document</label>
+                        <textarea
+                            style="
+                                width: 100%;
+                                margin-bottom: 10px;
+                                font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial,
+                                    sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+                            "
+                            rows="30"
+                            v-model="initialData.checkNoNewAccessTextArea"
+                            placeholder="Enter reference policy document"
+                        ></textarea>
+                    </div>
                 </div>
-                <div style="margin-top: 5px" v-if="initialData.customChecksFileErrorMessage">
-                    <p style="color: var(--vscode-errorForeground)">
-                        {{ initialData.customChecksFileErrorMessage }}
-                    </p>
-                </div>
-                <div>
-                    <textarea
-                        style="
-                            width: 100%;
-                            margin-bottom: 10px;
-                            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial,
-                                sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
-                        "
-                        rows="30"
-                        v-model="initialData.customChecksTextArea"
-                        :placeholder="customChecksTextAreaPlaceholder"
-                    ></textarea>
+                <div v-if="checkType == 'CheckAccessNotGranted'">
+                    <div>
+                        <label for="input-path" style="display: block; margin-bottom: 3px"
+                            >Provide a reference file containing a list of actions</label
+                        >
+                        <input
+                            type="text"
+                            style="
+                                display: flex;
+                                box-sizing: border-box;
+                                position: relative;
+                                margin-bottom: 10px;
+                                width: 70%;
+                            "
+                            id="input-path"
+                            placeholder="List of actions file path"
+                            v-on:change="setCheckAccessNotGrantedFilePath"
+                            v-model="initialData.checkAccessNotGrantedFilePath"
+                        />
+                    </div>
+                    <div style="margin-top: 5px" v-if="initialData.customChecksFileErrorMessage">
+                        <p style="color: var(--vscode-errorForeground)">
+                            {{ initialData.customChecksFileErrorMessage }}
+                        </p>
+                    </div>
+                    <div>
+                        <label style="margin-bottom: 3px">Enter a list of actions</label>
+                        <textarea
+                            style="
+                                width: 100%;
+                                margin-bottom: 10px;
+                                font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial,
+                                    sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+                            "
+                            rows="30"
+                            v-model="initialData.checkAccessNotGrantedTextArea"
+                            placeholder="Enter a list of actions"
+                        ></textarea>
+                    </div>
                 </div>
                 <div style="display: grid">
                     <b style="margin-bottom: 5px"
@@ -256,18 +301,20 @@ export default defineComponent({
     data: () => ({
         documentType: 'CloudFormation',
         validatePolicyType: 'Identity',
-        customChecksPolicyType: 'Identity',
-        checkType: 'CheckNoNewAccess',
+        checkNoNewAccessPolicyType: 'Identity',
+        checkType: 'CheckAccessNotGranted',
         initialData: {
-            customChecksFilePath: '',
-            customChecksTextArea: '',
+            checkNoNewAccessFilePath: '',
+            checkNoNewAccessTextArea: '',
+            checkAccessNotGrantedFilePath: '',
+            checkAccessNotGrantedTextArea: '',
             customChecksFileErrorMessage: '',
             cfnParameterPath: '',
             pythonToolsInstalled: false,
         },
         inputPath: '',
-        customChecksPathPlaceholder: 'Reference policy file path',
-        customChecksTextAreaPlaceholder: 'Enter reference policy document',
+        checkAccessNotGrantedPathPlaceholder: 'List of actions file path',
+        checkAccessNotGrantedTextAreaPlaceholder: 'Enter a list of actions',
         validatePolicyResponse: '',
         validatePolicyResponseColor: 'var(--vscode-errorForeground)',
         customPolicyCheckResponse: '',
@@ -280,12 +327,21 @@ export default defineComponent({
         client.onChangeInputPath((data: string) => {
             this.inputPath = data
         })
-        client.onChangeCustomChecksFilePath((data: string) => {
-            this.initialData.customChecksFilePath = data
+        client.onChangeCheckNoNewAccessFilePath((data: string) => {
+            this.initialData.checkNoNewAccessFilePath = data
             client
-                .readCustomChecksFile(this.initialData.customChecksFilePath)
+                .readCustomChecksFile(this.initialData.checkNoNewAccessFilePath)
                 .then(response => {
-                    this.initialData.customChecksTextArea = response
+                    this.initialData.checkNoNewAccessTextArea = response
+                })
+                .catch(err => console.log(err))
+        })
+        client.onChangeCheckAccessNotGrantedFilePath((data: string) => {
+            this.initialData.checkAccessNotGrantedFilePath = data
+            client
+                .readCustomChecksFile(this.initialData.checkAccessNotGrantedFilePath)
+                .then(response => {
+                    this.initialData.checkAccessNotGrantedTextArea = response
                 })
                 .catch(err => console.log(err))
         })
@@ -313,28 +369,31 @@ export default defineComponent({
             client.emitUiClick('accessanalyzer_selectInputPolicyType')
             this.validatePolicyType = event.target.value
         },
-        setCustomChecksPolicyType: function (event: any) {
+        setCheckNoNewAccessPolicyType: function (event: any) {
             client.emitUiClick('accessanalyzer_selectReferencePolicyType')
-            this.customChecksPolicyType = event.target.value
+            this.checkNoNewAccessPolicyType = event.target.value
         },
         setCheckType: function (event: any) {
             client.emitUiClick('accessanalyzer_selectCustomCheckType')
             this.checkType = event.target.value
-            if (this.checkType == 'CheckNoNewAccess') {
-                this.customChecksPathPlaceholder = 'Reference policy file path'
-                this.customChecksTextAreaPlaceholder = 'Enter reference policy document'
-            } else {
-                this.customChecksPathPlaceholder = 'List of actions file path'
-                this.customChecksTextAreaPlaceholder = 'Enter list of actions'
-            }
         },
-        setCustomChecksFilePath: function (event: any) {
-            client.emitUiClick('accessanalyzer_selectCustomChecksFilePath')
-            this.initialData.customChecksFilePath = event.target.value
+        setCheckNoNewAccessFilePath: function (event: any) {
+            client.emitUiClick('accessanalyzer_selectCheckNoNewAccessFilePath')
+            this.initialData.checkNoNewAccessFilePath = event.target.value
             client
-                .readCustomChecksFile(this.initialData.customChecksFilePath)
+                .readCustomChecksFile(this.initialData.checkNoNewAccessFilePath)
                 .then(response => {
-                    this.initialData.customChecksTextArea = response
+                    this.initialData.checkNoNewAccessTextArea = response
+                })
+                .catch(err => console.log(err))
+        },
+        setCheckAccessNotGrantedFilePath: function (event: any) {
+            client.emitUiClick('accessanalyzer_selectCheckAccessNotGrantedFilePath')
+            this.initialData.checkAccessNotGrantedFilePath = event.target.value
+            client
+                .readCustomChecksFile(this.initialData.checkAccessNotGrantedFilePath)
+                .then(response => {
+                    this.initialData.checkAccessNotGrantedTextArea = response
                 })
                 .catch(err => console.log(err))
         },
@@ -358,14 +417,14 @@ export default defineComponent({
             if (this.checkType == 'CheckNoNewAccess') {
                 await client.checkNoNewAccess(
                     this.documentType as PolicyChecksDocumentType,
-                    this.customChecksPolicyType as PolicyChecksPolicyType,
-                    this.initialData.customChecksTextArea,
+                    this.checkNoNewAccessPolicyType as PolicyChecksPolicyType,
+                    this.initialData.checkNoNewAccessTextArea,
                     this.initialData.cfnParameterPath
                 )
             } else if (this.checkType == 'CheckAccessNotGranted') {
                 await client.checkAccessNotGranted(
                     this.documentType as PolicyChecksDocumentType,
-                    this.initialData.customChecksTextArea,
+                    this.initialData.checkAccessNotGrantedTextArea,
                     this.initialData.cfnParameterPath
                 )
             }

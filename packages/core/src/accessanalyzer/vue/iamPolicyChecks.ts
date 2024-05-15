@@ -33,8 +33,10 @@ const customPolicyCheckDiagnosticCollection = vscode.languages.createDiagnosticC
 const validatePolicyDiagnosticCollection = vscode.languages.createDiagnosticCollection('validatePolicy')
 
 export interface IamPolicyChecksInitialData {
-    customChecksFilePath: string
-    customChecksTextArea: string
+    checkNoNewAccessFilePath: string
+    checkNoNewAccessTextArea: string
+    checkAccessNotGrantedFilePath: string
+    checkAccessNotGrantedTextArea: string
     customChecksFileErrorMessage: string
     cfnParameterPath: string
     pythonToolsInstalled: boolean
@@ -52,7 +54,8 @@ export class IamPolicyChecksWebview extends VueWebview {
         private readonly client: AccessAnalyzer,
         private readonly region: string,
         public readonly onChangeInputPath = new vscode.EventEmitter<string>(),
-        public readonly onChangeCustomChecksFilePath = new vscode.EventEmitter<string>(),
+        public readonly onChangeCheckNoNewAccessFilePath = new vscode.EventEmitter<string>(),
+        public readonly onChangeCheckAccessNotGrantedFilePath = new vscode.EventEmitter<string>(),
         public readonly onChangeCloudformationParameterFilePath = new vscode.EventEmitter<string>(),
         public readonly onValidatePolicyResponse = new vscode.EventEmitter<[string, string]>(),
         public readonly onCustomPolicyCheckResponse = new vscode.EventEmitter<[string, string]>(),
@@ -106,9 +109,15 @@ export class IamPolicyChecksWebview extends VueWebview {
     public _setActiveConfigurationListener() {
         vscode.workspace.onDidChangeConfiguration((config: vscode.ConfigurationChangeEvent) => {
             // If settings change, we want to update the Webview to reflect the change in inputs
-            if (config.affectsConfiguration(IamPolicyChecksConstants.CustomCheckFilePathSetting)) {
-                this.onChangeCustomChecksFilePath.fire(
-                    vscode.workspace.getConfiguration().get(IamPolicyChecksConstants.CustomCheckFilePathSetting)!
+            if (config.affectsConfiguration(IamPolicyChecksConstants.CheckNoNewAccessFilePathSetting)) {
+                this.onChangeCheckNoNewAccessFilePath.fire(
+                    vscode.workspace.getConfiguration().get(IamPolicyChecksConstants.CheckNoNewAccessFilePathSetting)!
+                )
+            } else if (config.affectsConfiguration(IamPolicyChecksConstants.CheckAccessNotGrantedFilePathSetting)) {
+                this.onChangeCheckAccessNotGrantedFilePath.fire(
+                    vscode.workspace
+                        .getConfiguration()
+                        .get(IamPolicyChecksConstants.CheckAccessNotGrantedFilePathSetting)!
                 )
             } else if (config.affectsConfiguration(IamPolicyChecksConstants.CfnParameterFilePathSetting)) {
                 this.onChangeCloudformationParameterFilePath.fire(
@@ -567,17 +576,24 @@ export async function renderIamPolicyChecks(context: ExtContext): Promise<void> 
     try {
         const client = new AccessAnalyzer({ region: context.regionProvider.defaultRegionId })
         //Read from settings to auto-fill some inputs
-        const customChecksFilePath: string = vscode.workspace
+        const checkNoNewAccessFilePath: string = vscode.workspace
             .getConfiguration()
-            .get(IamPolicyChecksConstants.CustomCheckFilePathSetting)!
+            .get(IamPolicyChecksConstants.CheckNoNewAccessFilePathSetting)!
+        const checkAccessNotGrantedFilePath: string = vscode.workspace
+            .getConfiguration()
+            .get(IamPolicyChecksConstants.CheckAccessNotGrantedFilePathSetting)!
         const cfnParameterPath: string = vscode.workspace
             .getConfiguration()
             .get(IamPolicyChecksConstants.CfnParameterFilePathSetting)!
-        let customChecksTextArea: string = ''
+        let checkNoNewAccessTextArea: string = ''
+        let checkAccessNotGrantedTextArea: string = ''
         let customChecksFileErrorMessage: string = ''
         try {
-            if (customChecksFilePath) {
-                customChecksTextArea = await _readCustomChecksFile(customChecksFilePath)
+            if (checkNoNewAccessFilePath) {
+                checkNoNewAccessTextArea = await _readCustomChecksFile(checkNoNewAccessFilePath)
+            }
+            if (checkAccessNotGrantedFilePath) {
+                checkNoNewAccessTextArea = await _readCustomChecksFile(checkAccessNotGrantedFilePath)
             }
         } catch (err: any) {
             customChecksFileErrorMessage = err.message
@@ -586,8 +602,10 @@ export async function renderIamPolicyChecks(context: ExtContext): Promise<void> 
         const wv = new Panel(
             context.extensionContext,
             {
-                customChecksFilePath: customChecksFilePath ? customChecksFilePath : '',
-                customChecksTextArea,
+                checkNoNewAccessFilePath: checkNoNewAccessFilePath ? checkNoNewAccessFilePath : '',
+                checkNoNewAccessTextArea,
+                checkAccessNotGrantedFilePath: checkAccessNotGrantedFilePath ? checkAccessNotGrantedFilePath : '',
+                checkAccessNotGrantedTextArea,
                 customChecksFileErrorMessage,
                 cfnParameterPath: cfnParameterPath ? cfnParameterPath : '',
                 pythonToolsInstalled: arePythonToolsInstalled(),

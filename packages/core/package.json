@@ -219,10 +219,16 @@
                     "description": "%AWS.configuration.description.lambda.recentlyUploaded%",
                     "default": []
                 },
-                "aws.accessAnalyzer.policyChecks.customChecksFilePath": {
+                "aws.accessAnalyzer.policyChecks.checkNoNewAccessFilePath": {
                     "type": "string",
                     "default": "",
-                    "description": "File path or S3 path to a text document for Custom Policy Checks.",
+                    "description": "File path or S3 path to a text document for CheckNoNewAccess custom check.",
+                    "scope": "window"
+                },
+                "aws.accessAnalyzer.policyChecks.checkAccessNotGrantedFilePath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "File path or S3 path to a text document for CheckAccessNotGranted custom check.",
                     "scope": "window"
                 },
                 "aws.accessAnalyzer.policyChecks.cloudFormationParameterFilePath": {
