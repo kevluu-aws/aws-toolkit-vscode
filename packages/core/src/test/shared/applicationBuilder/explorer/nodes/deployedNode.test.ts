@@ -214,7 +214,7 @@ describe('generateDeployedNode', () => {
                 lambdaDeployedNodeInput.resourceTreeEntity
             )
 
-            assertLogsContain('Error getting Lambda configuration %O', true, 'error')
+            assertLogsContain('Error getting Lambda configuration', false, 'error')
             assert(deployedResourceNodes.length === 1)
 
             // Check placeholder propertries
@@ -298,9 +298,9 @@ describe('generateDeployedNode', () => {
                 name?: string
                 description?: string
             }
-            Object.entries(options).forEach(([key, value]) => {
+            for (const [key, value] of Object.entries(options)) {
                 value !== undefined && Object.defineProperty(mockNode, key, { value, writable: true })
-            })
+            }
             return mockNode
         }
 

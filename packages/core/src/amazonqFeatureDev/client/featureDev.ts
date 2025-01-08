@@ -25,7 +25,12 @@ import { createCodeWhispererChatStreamingClient } from '../../shared/clients/cod
 import { getClientId, getOptOutPreference, getOperatingSystem } from '../../shared/telemetry/util'
 import { extensionVersion } from '../../shared/vscode/env'
 import apiConfig = require('./codewhispererruntime-2022-11-11.json')
-import { FeatureDevCodeAcceptanceEvent, FeatureDevCodeGenerationEvent, TelemetryEvent } from './featuredevproxyclient'
+import {
+    FeatureDevCodeAcceptanceEvent,
+    FeatureDevCodeGenerationEvent,
+    MetricData,
+    TelemetryEvent,
+} from './featuredevproxyclient'
 
 // Re-enable once BE is able to handle retries.
 const writeAPIRetryOptions = {
@@ -78,7 +83,11 @@ export class FeatureDevClient {
                 getLogger().error(
                     `${featureName}: failed to start conversation: ${e.message} RequestId: ${e.requestId}`
                 )
-                if (e.code === 'ServiceQuotaExceededException') {
+                // BE service will throw ServiceQuota if conversation limit is reached. API Front-end will throw Throttling with this message if conversation limit is reached
+                if (
+                    e.code === 'ServiceQuotaExceededException' ||
+                    (e.code === 'ThrottlingException' && e.message.includes('reached for this month.'))
+                ) {
                     throw new MonthlyConversationLimitError(e.message)
                 }
                 throw new ApiError(e.message, 'CreateConversation', e.code, e.statusCode ?? 400)
@@ -135,8 +144,10 @@ export class FeatureDevClient {
         conversationId: string,
         uploadId: string,
         message: string,
+        intent: FeatureDevProxyClient.Intent,
         codeGenerationId: string,
-        currentCodeGenerationId?: string
+        currentCodeGenerationId?: string,
+        intentContext?: FeatureDevProxyClient.IntentContext
     ) {
         try {
             const client = await this.getClient(writeAPIRetryOptions)
@@ -153,9 +164,13 @@ export class FeatureDevClient {
                     uploadId,
                     programmingLanguage: { languageName: 'javascript' },
                 },
+                intent,
             } as FeatureDevProxyClient.Types.StartTaskAssistCodeGenerationRequest
             if (currentCodeGenerationId) {
                 params.currentCodeGenerationId = currentCodeGenerationId
+            }
+            if (intentContext) {
+                params.intentContext = intentContext
             }
             getLogger().debug(`Executing startTaskAssistCodeGeneration with %O`, params)
             const response = await client.startTaskAssistCodeGeneration(params).promise()
@@ -167,13 +182,22 @@ export class FeatureDevClient {
                     (e as any).requestId
                 }`
             )
-            if (
-                isAwsError(e) &&
-                ((e.code === 'ThrottlingException' &&
-                    e.message.includes('limit for number of iterations on a code generation')) ||
-                    e.code === 'ServiceQuotaExceededException')
-            ) {
-                throw new CodeIterationLimitError()
+            if (isAwsError(e)) {
+                // API Front-end will throw Throttling if conversation limit is reached. API Front-end monitors StartCodeGeneration for throttling
+                if (
+                    e.code === 'ThrottlingException' &&
+                    e.message.includes('StartTaskAssistCodeGeneration reached for this month.')
+                ) {
+                    throw new MonthlyConversationLimitError(e.message)
+                }
+                // BE service will throw ServiceQuota if code generation iteration limit is reached
+                else if (
+                    e.code === 'ServiceQuotaExceededException' ||
+                    (e.code === 'ThrottlingException' &&
+                        e.message.includes('limit for number of iterations on a code generation'))
+                ) {
+                    throw new CodeIterationLimitError()
+                }
             }
             throw new ToolkitError((e as Error).message, { code: 'StartCodeGenerationFailed' })
         }
@@ -278,6 +302,11 @@ export class FeatureDevClient {
             `featureDevCodeAcceptanceEvent: conversationId: ${event.conversationId} charactersOfCodeAccepted: ${event.charactersOfCodeAccepted} linesOfCodeAccepted: ${event.linesOfCodeAccepted}`
         )
         await this.sendFeatureDevEvent('featureDevCodeAcceptanceEvent', event)
+    }
+
+    public async sendMetricData(event: MetricData) {
+        getLogger().debug(`featureDevCodeGenerationMetricData: dimensions: ${event.dimensions}`)
+        await this.sendFeatureDevEvent('metricData', event)
     }
 
     public async sendFeatureDevEvent<T extends keyof TelemetryEvent>(
